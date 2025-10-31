@@ -6,26 +6,14 @@ import SwiftUI
 struct ReminderView: View {
     @Binding var reminder: remReminder
     var userRole: UserRole
-    
-    // --- FIX: Add EnvironmentObject ---
     @EnvironmentObject var gameDataStore: GameDataStore
-    
-    // --- THIS IS THE FIX ---
-    // Add the auth environment object to receive it from the parent
     @EnvironmentObject var auth: Authentication
-    // --- END FIX ---
-    
     @State private var isShowingDeleteConfirmation = false
     
-    // --- ADD THIS EXPLICIT INITIALIZER ---
-    // This manually defines the init that the linker is looking for.
-    // The @EnvironmentObject will be injected automatically by the parent view.
     init(reminder: Binding<remReminder>, userRole: UserRole) {
         self._reminder = reminder
         self.userRole = userRole
     }
-    // --- END ADDITION ---
-    
     private var accentColor: Color {
         reminder.isCompleted ? .green : (reminder.tags.first?.color ?? .orange)
     }
@@ -57,14 +45,9 @@ struct ReminderView: View {
                     TagsCard(tags: $reminder.tags, userRole: userRole)
                     
                     if !gameCards.isEmpty && userRole == .patient {
-                        // --- FIX 1 ---
-                        // Remove explicit .environmentObject(gameDataStore)
-                        // This allows LinkedActivitiesCard to inherit *both*
-                        // gameDataStore and auth from ReminderView.
+                        
                         LinkedActivitiesCard(gameCards: gameCards)
                     }
-                    
-                    // Keep only the Mark Complete/Pending button
                     actionButtons
                 }
                 .padding()
@@ -72,7 +55,6 @@ struct ReminderView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationBarTitleDisplayMode(.inline)
-        // Toolbar button for delete
         .toolbar {
             if userRole == .admin {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -85,7 +67,6 @@ struct ReminderView: View {
                 }
             }
         }
-        // Keep your confirmation dialog logic intact
         .alert("Delete Reminder?",
                isPresented: $isShowingDeleteConfirmation) {
             Button("Delete Reminder", role: .destructive) {
@@ -112,8 +93,7 @@ struct ReminderView: View {
             .controlSize(.large)
             .buttonStyle(.borderedProminent)
             .tint(reminder.isCompleted ? .red : .green)
-            
-            // Removed bottom "Delete Reminder" button
+          
         }
     }
 }
@@ -248,15 +228,9 @@ struct TagsCard: View {
 struct LinkedActivitiesCard: View {
     let gameCards: [GameCard]
     
-    // It now inherits both objects from ReminderView
     @EnvironmentObject var gameDataStore: GameDataStore
-    
-    // --- FIX 2 ---
-    // Add auth here so it's received from ReminderView
     @EnvironmentObject var auth: Authentication
-    // --- END FIX ---
 
-    // Helper to find the index of a game in the main data store
     private func getGameIndex(for gameCard: GameCard) -> Int? {
         gameDataStore.games.firstIndex(where: { $0.card.id == gameCard.id })
     }
@@ -266,38 +240,34 @@ struct LinkedActivitiesCard: View {
             Label("Linked Activities", systemImage: "play.circle.fill")
                 .font(.headline)
                 .foregroundStyle(.secondary)
-            
-            // Use the same wrapping stack as the tags
+       
             TagWrappingHStack(alignment: .leading) {
                 ForEach(gameCards) { game in
                     
                     if let gameIndex = getGameIndex(for: game) {
-                        // --- FIX 3 ---
-                        // A NavigationLink destination is a new view hierarchy,
-                        // so we must explicitly pass the environment objects on.
+                    
                         NavigationLink(destination: GameDetailView(game: game, tiers: $gameDataStore.games[gameIndex].tiers)
                             .environmentObject(gameDataStore)
                             .environmentObject(auth)
                         ) {
-                            // Style the link to look like a small, tappable pill
+                            
                             Label(game.title, systemImage: "play.fill")
                                 .font(.caption.bold())
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
-                                .foregroundStyle(.white) // Use white for good contrast
+                                .foregroundStyle(.white)
                                 .glassEffect(.regular.tint(game.accentColor.opacity(0.8)), in: .capsule)
                                 .overlay(
                                     Capsule().strokeBorder(game.accentColor.opacity(0.3), lineWidth: 1.5)
                                 )
                         }
-                        .buttonStyle(.plain) // Use .plain to avoid default link styling
+                        .buttonStyle(.plain)
                     }
-                    // --- END FIX ---
                 }
             }
         }
         .padding(20)
-        .glassEffect(in: .rect(cornerRadius: 35)) // Wrap the whole section in a card
+        .glassEffect(in: .rect(cornerRadius: 35))
     }
 }
 
@@ -310,16 +280,14 @@ struct LinkedActivitiesCard: View {
             details: "Complete the balance practice exercise.",
             isCompleted: false,
             date: Date(),
-            // The preview now uses a game tag
-            tags: [remTag.sampleTags[1]] // "Balance Practice"
+            tags: [remTag.sampleTags[1]]
         )
         
         var body: some View {
             NavigationView {
                 ReminderView(reminder: $sampleReminder, userRole: .patient)
-                    // --- ADD THIS FOR PREVIEW ---
                     .environmentObject(GameDataStore())
-                    .environmentObject(Authentication()) // <-- FIX PREVIEW
+                    .environmentObject(Authentication()) 
             }
         }
     }

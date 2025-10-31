@@ -77,6 +77,18 @@ struct EnhancedLevelDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+                .navigationBarBackButtonHidden(true)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "chevron.backward")
+                                .font(.system(size: 17))
+                                .foregroundColor(accentColor)
+                        }
+                    }
+                }
         
         .fullScreenCover(isPresented: $showPostGameFlow) {
             if let session = sessionForModal {
@@ -125,7 +137,7 @@ struct EnhancedLevelDetailView: View {
         showPostGameFlow = true
     }
     
-    // MARK: - View Components (Redesigned)
+    // MARK: - View Components
     
     private var heroCardView: some View {
         VStack(spacing: 25) {
@@ -198,6 +210,7 @@ struct EnhancedLevelDetailView: View {
                         systemImage: "calendar",
                         color: accentColor.opacity(0.8)
                     )
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 
@@ -209,5 +222,6 @@ struct EnhancedLevelDetailView: View {
         .padding(.vertical, 8)
         .glassEffect(in: .rect(cornerRadius: 30))
         .padding(.horizontal)
+        
     }
 }

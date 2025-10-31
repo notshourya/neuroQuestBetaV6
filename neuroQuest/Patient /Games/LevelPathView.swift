@@ -102,8 +102,20 @@ struct LevelPathView: View {
             .padding(.top, 60)
         }
         .ignoresSafeArea(edges: .top)
-        .navigationBarTitleDisplayMode(.inline)
-    }
+                .navigationBarTitleDisplayMode(.inline)
+                .navigationBarBackButtonHidden(true)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "chevron.backward")
+                                .font(.system(size: 17))
+                                .foregroundColor(game.accentColor)
+                        }
+                    }
+                }
+            }
 
     private func handleLevelCompletion(completedLevelId: Int, score: Int) {
         guard let index = tier.levels.firstIndex(where: { $0.id == completedLevelId }) else { return }

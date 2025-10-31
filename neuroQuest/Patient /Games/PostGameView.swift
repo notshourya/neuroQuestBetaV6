@@ -172,23 +172,36 @@ struct PostGameView: View {
                             
                         }
                     }
-                
-                    Button(action: onDismiss) {
-                        Label("Done", systemImage: "checkmark.circle.fill")
-                            .font(.title2.bold())
-                            .imageScale(.large)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.large)
-                    .tint(accentColor)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 10)
-                    .padding(.top, 5)
-                    .shadow(color: accentColor.opacity(0.3), radius: 8, y: 4)
+//                
+//                    Button(action: onDismiss) {
+//                        Label("Done", systemImage: "checkmark.circle.fill")
+//                            .font(.title2.bold())
+//                            .imageScale(.large)
+//                            .frame(maxWidth: .infinity)
+//                    }
+//                    .buttonStyle(.glassProminent)
+//                    .controlSize(.large)
+//                    .tint(accentColor)
+//                    .padding(.horizontal, 20)
+//                    .padding(.bottom, 10)
+//                    .padding(.top, 5)
+//                    .background(
+//                        Color.clear
+//                            .ignoresSafeArea(edges: .bottom)
+//                    )
+//                    .shadow(color: accentColor.opacity(0.3), radius: 8, y: 4)
                 }
             }
-            .navigationBarHidden(true)
+           // .navigationBarHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar{
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(action: onDismiss) {
+                        Label("Done", systemImage: "checkmark").labelStyle(.titleAndIcon)
+                    }
+                    .tint(accentColor)
+                }
+            }
         }
     }
 }

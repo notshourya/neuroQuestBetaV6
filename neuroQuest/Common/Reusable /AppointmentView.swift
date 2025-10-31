@@ -12,6 +12,7 @@ struct AppointmentsView: View {
     var userRole: UserRole
     
     @State private var notes: String = "Ask about new medication side effects..."
+    @State private var isShowingDeleteConfirmation = false
 
     var body: some View {
         ZStack {
@@ -25,25 +26,35 @@ struct AppointmentsView: View {
                 VStack(spacing: 24) {
                     AppointmentHeroHeader(appointment: $appointment, userRole: userRole)
                     detailsCard
-
                     quickActionsCard
-        
                     notesCard
-                    
-                
-                    if userRole == .admin {
-                        Button("Cancel Appointment", role: .destructive, action: {})
-                            .font(.headline.bold())
-                            .frame(maxWidth: .infinity)
-                            .controlSize(.large)
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
-                    }
                 }
                 .padding()
             }
         }
         .background(Color(.systemGroupedBackground))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if userRole == .admin {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+        }
+        .alert("Cancel Appointment?",
+               isPresented: $isShowingDeleteConfirmation) {
+            Button("Delete Appointment", role: .destructive) {
+                print("Appointment Deleted")
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This action cannot be undone. Are you sure you want to permanently delete this appointment?")
+        }
     }
 
     // MARK: - Card Components
@@ -155,6 +166,7 @@ struct QuickActionButton: View {
     }
 }
 
+// MARK: - Preview
 #Preview {
     struct AppointmentsView_Preview: View {
         @State var appointment = remAppointment(
@@ -168,13 +180,10 @@ struct QuickActionButton: View {
         
         var body: some View {
             NavigationView {
-               
-                AppointmentsView(appointment: $appointment, userRole: UserRole.admin)
+                AppointmentsView(appointment: $appointment, userRole: .admin)
             }
         }
     }
     
     return AppointmentsView_Preview()
-
 }
-

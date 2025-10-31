@@ -45,7 +45,7 @@ struct ScoreSummaryView: View {
                 
                 RadialGradient(
                     gradient: Gradient(colors: [
-                        accentColor.opacity(didMeetTarget ? 0.2 : 0.1),
+                        accentColor.opacity(didMeetTarget ? 0.15 : 0.1),
                         .clear
                     ]),
                     center: .center,
@@ -70,7 +70,7 @@ struct ScoreSummaryView: View {
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [accentColor, accentColor.opacity(0.7)],
+                                colors: [accentColor, accentColor.opacity(0.8)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -212,6 +212,7 @@ struct ScoreSummaryView: View {
                 }
             }
             .padding(20)
+            .padding(.bottom, 10)
         }
         .onAppear(perform: startAnimations)
     }
@@ -342,7 +343,7 @@ struct ConfettiPiece: View {
         score: 92,
         oldBestScore: 85,
         rating: 4,
-        accentColor: .orange,
+        accentColor: .pink,
         targetScore: 80
     ) {
         print("Continue Tapped")
