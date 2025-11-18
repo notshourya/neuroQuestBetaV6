@@ -2,7 +2,6 @@
 //  LevelPathView.swift
 //  neuroQuest
 
-
 import SwiftUI
 
 // MARK: - Main View
@@ -11,6 +10,7 @@ struct LevelPathView: View {
     let game: GameCard
     let onLastLevelComplete: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var patientModel: PatientDataModel // <-- ADDED
     
     @State private var animateHeader = false
 
@@ -75,6 +75,7 @@ struct LevelPathView: View {
                                             handleLevelCompletion(completedLevelId: level.id, score: score)
                                         }
                                     )
+                                    .environmentObject(patientModel) // <-- ADDED
                                     .id(index)
 
                                     if index % 2 == 0 { Spacer(minLength: 0) }
@@ -133,7 +134,10 @@ struct LevelPathView: View {
     }
 }
 
+// ... All other subviews (ModernTierHeader, EnhancedLevelNode, etc.) remain unchanged ...
 // MARK: - Modern Tier Header (Linear Bar Removed)
+// ... (ModernTierHeader, EnhancedLevelNode, StarCapsuleView, etc.) ...
+
 struct ModernTierHeader: View {
     let title: String
     let progress: CGFloat

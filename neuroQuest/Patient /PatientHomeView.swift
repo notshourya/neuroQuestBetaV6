@@ -22,6 +22,16 @@ struct HomeView: View {
         patientModel.patient.sessions.filter { Calendar.current.isDateInToday($0.date) }
     }
     
+    private var requiredGameNames: Set<String> {
+        let gameTagNames = Set(remTag.gameTagNames)
+        let allRequiredTags = patientModel.patient.reminders
+            .filter { !$0.isCompleted && Calendar.current.isDateInToday($0.date) }
+            .flatMap { $0.tags }
+            .map { $0.name }
+        
+        return Set(allRequiredTags).intersection(gameTagNames)
+    }
+    
     private var weeklyConsistency: [DayCompletion] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -77,11 +87,16 @@ struct HomeView: View {
                         .opacity(hasAppeared ? 1 : 0)
                         .offset(y: hasAppeared ? 0 : 20)
                         .animation(.easeOut(duration: 0.5), value: hasAppeared)
-                        HomeDashboardCard(sessionsToday: sessionsToday)
-                            .opacity(hasAppeared ? 1 : 0)
-                            .offset(y: hasAppeared ? 0 : 20)
-                            .animation(.easeOut(duration: 0.5).delay(0.2), value: hasAppeared)
-                            .padding(.horizontal)
+                        
+                        // MARK: - Updated Card
+                        HomeDashboardCard(
+                            sessionsToday: sessionsToday,
+                            requiredGameNames: requiredGameNames
+                        )
+                        .opacity(hasAppeared ? 1 : 0)
+                        .offset(y: hasAppeared ? 0 : 20)
+                        .animation(.easeOut(duration: 0.5).delay(0.2), value: hasAppeared)
+                        .padding(.horizontal)
                         
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Focus for Today").font(.title2.bold()).padding(.horizontal)
@@ -101,6 +116,7 @@ struct HomeView: View {
                         .opacity(hasAppeared ? 1 : 0)
                         .offset(y: hasAppeared ? 0 : 20)
                         .animation(.easeOut(duration: 0.5).delay(0.4), value: hasAppeared)
+                        
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Weekly Consistency").font(.title2.bold()).padding(.horizontal)
                             NavigationLink(destination: PatientActivityView()) {
@@ -172,56 +188,98 @@ struct HeaderView: View {
     }
 }
 
+// MARK: - UPDATED HomeDashboardCard
 struct HomeDashboardCard: View {
     let sessionsToday: [GamePlaySession]
+    let requiredGameNames: Set<String>
+    
     @State private var animateRing = false
     
     private var totalSeconds: Int {
         sessionsToday.reduce(0) { $0 + $1.durationInSeconds }
     }
-    private var exercisesCompleted: Int {
-        Set(sessionsToday.map { $0.gameTitle }).count
-    }
-    private var bestScore: Int {
-        sessionsToday.map { $0.score }.max() ?? 0
-    }
+   
     private var progress: Double {
-        min(Double(totalSeconds) / 1800.0, 1.0)
+        totalSeconds == 0 ? 0 : min(Double(totalSeconds) / 1800.0, 1.0)
+    }
+ 
+    private var uniqueGamesPlayed: [GameCard] {
+        let gameTitles = Set(sessionsToday.map { $0.gameTitle })
+        return GameCard.allGames
+            .filter { gameTitles.contains($0.title) }
+            .sorted { $0.title < $1.title }
     }
     
     var body: some View {
-        VStack(alignment: .center, spacing: 16) {
-            Label("Today's Summary", systemImage: "sparkles")
-                .font(.title2.bold())
-                .foregroundColor(.cyan)
-            
-            ZStack {
-                Circle().stroke(Color.cyan.opacity(0.15), lineWidth: 15)
-                Circle()
-                    .trim(from: 0, to: animateRing ? progress : 0)
-                    .stroke(Color.cyan.gradient, style: StrokeStyle(lineWidth: 15, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                
-                VStack {
-                    Text("Active Time").font(.caption).bold().foregroundColor(.secondary)
-                    Text("\(totalSeconds / 60) min")
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .foregroundColor(.cyan)
-                        .contentTransition(.numericText())
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center) {
+                Spacer()
+                ZStack {
+                    Circle().stroke(Color.cyan.opacity(0.15), lineWidth: 15)
+                    Circle()
+                        .trim(from: 0, to: animateRing ? progress : 0)
+                        .stroke(Color.cyan.gradient, style: StrokeStyle(lineWidth: 15, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    
+                    VStack {
+                        Text("Active Time").font(.caption).bold().foregroundColor(.secondary)
+                        Text("\(totalSeconds / 60) min")
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .foregroundColor(.cyan)
+                            .contentTransition(.numericText())
+                    }
+                }
+                .frame(height: 150)
+                .padding(.vertical)
+                Spacer()
+            }
+       
+            Divider()
+
+            VStack(alignment: .leading, spacing: 15) {
+                Text("Today's Games")
+                    .font(.headline)
+                    .padding(.horizontal, 5)
+
+                if uniqueGamesPlayed.isEmpty {
+                    VStack(alignment: .center, spacing: 5) {
+                        Image(systemName: "figure.play")
+                            .font(.title)
+                            .foregroundStyle(.secondary)
+                        Text("No Games Played Yet")
+                            .font(.subheadline.bold())
+                        Text("Tap the 'Games' tab to start!")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                } else {
+                    VStack(spacing: 12) {
+                        ForEach(uniqueGamesPlayed) { game in
+                            
+                            let sessionsForThisGame = sessionsToday.filter { $0.gameTitle == game.title }
+                            let totalDurationSec = sessionsForThisGame.reduce(0) { $0 + $1.durationInSeconds }
+                            let sessionCount = sessionsForThisGame.count
+                            let totalScore = sessionsForThisGame.reduce(0) { $0 + $1.score }
+                            let avgScore = (sessionCount > 0) ? (totalScore / sessionCount) : 0
+                            
+                            let isRequired = requiredGameNames.contains(game.title)
+
+                            TodayGameSummaryRow(
+                                game: game,
+                                durationMinutes: totalDurationSec / 60,
+                                avgScore: avgScore,
+                                sessionCount: sessionCount,
+                                isRequired: isRequired
+                            )
+                        }
+                    }
                 }
             }
-            .frame(height: 150)
-            .padding(.vertical)
-            
-            HStack(spacing: 15) {
-                StatPill(label: "Exercises", value: "\(exercisesCompleted)", color: .purple)
-                    .glassEffect(in: .capsule)
-                
-                StatPill(label: "Best Score", value: "\(bestScore) pts", color: .orange)
-                    .glassEffect(in: .capsule)
-            }
+          
         }
-        .padding(20)
+        .padding(25)
         .glassEffect(in: .rect(cornerRadius: 45))
         .onAppear {
             withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.2)) {
@@ -230,6 +288,7 @@ struct HomeDashboardCard: View {
         }
     }
 }
+
 
 struct MindfulnessSmallCard: View {
     var body: some View {
@@ -351,6 +410,63 @@ struct WeeklyConsistencyView: View {
         .glassEffect(in: .rect(cornerRadius: 30))
     }
 }
+
+// MARK: - UPDATED Component for Dashboard
+// This view is styled similarly to SessionRowView for design consistency
+struct TodayGameSummaryRow: View {
+    let game: GameCard
+    let durationMinutes: Int
+    let avgScore: Int
+    let sessionCount: Int
+    let isRequired: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .frame(width: 44, height: 44)
+                    .foregroundStyle(game.accentColor.opacity(0.15))
+                Image(systemName: game.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(game.accentColor)
+                    .frame(width: 22, height: 22)
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(game.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    
+                    if isRequired {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(game.accentColor)
+                    }
+                }
+                
+                Text(sessionCount == 1 ? "1 Session" : "\(sessionCount) Sessions")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(durationMinutes) min")
+                    .font(.headline.bold())
+                    .foregroundStyle(game.accentColor)
+                    .lineLimit(1)
+                Text("Avg. \(avgScore) pts")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
 
 // MARK: - Preview
 #Preview {

@@ -2,6 +2,7 @@ import SwiftUI
 import AVKit
 import WebKit
 
+
 struct WebView: UIViewRepresentable {
     let url: URL
     @Binding var isLoading: Bool
@@ -41,6 +42,7 @@ struct Achievement: Identifiable {
 struct GameDetailView: View {
     let game: GameCard
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var patientModel: PatientDataModel // <-- ADDED
    
     @Binding var tiers: [LevelTier]
 
@@ -101,6 +103,7 @@ struct GameDetailView: View {
                                             unlockNextTier(after: tier)
                                         }
                                     )
+                                    .environmentObject(patientModel) // <-- ADDED
                                 } label: {
                                      
                                     TierGridItemView(tier: tier, accentColor: game.accentColor, isUnlocked: isUnlocked)
@@ -191,7 +194,9 @@ struct GameDetailView: View {
     }
 }
 
+// ... All other subviews (TierGridItemView, GameProgressCard, etc.) remain unchanged ...
 // MARK: - Subviews for GameDetailView
+// ... (TierGridItemView, GameProgressCard, AchievementBadgeView, etc.) ...
 
 struct TierGridItemView: View {
     let tier: LevelTier
@@ -497,5 +502,6 @@ struct AchievementDetailSheet: View {
             tiers: .constant(LevelTier.generateMockTiers())
         )
         .environmentObject(GameDataStore())
+        .environmentObject(PatientDataModel()) // <-- ADDED
     }
 }

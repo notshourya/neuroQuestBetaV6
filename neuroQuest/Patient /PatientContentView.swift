@@ -69,4 +69,6 @@ struct PatientContentView: View {
 #Preview {
     PatientContentView()
         .environmentObject(Authentication())
+        .environmentObject(GameDataStore())
+        .environmentObject(PatientDataModel())
 }
